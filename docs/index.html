@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>rusttp — Fast, User-Friendly HTTP Client in Rust</title>
+  <meta name="description" content="rusttp is a blazingly fast HTTP client for the terminal. httpie rewritten in Rust with instant startup, colorized output, JSON auto-pretty printing, and offline mode.">
+  <meta name="keywords" content="rusttp, rust, cli, httpie, http-client, terminal, curl, developer-tools">
+  <meta property="og:title" content="rusttp — Fast, User-Friendly HTTP Client in Rust">
+  <meta property="og:description" content="httpie rewritten in Rust — ~150x faster startup, syntax highlighting, offline mode, and zero Python overhead.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://anilcan-kara.github.io/rusttp">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="rusttp — httpie rewritten in Rust">
+  <meta name="twitter:description" content="Starts in ~2ms. Zero Python runtime. Modern HTTP terminal client for developers.">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "rusttp",
+    "operatingSystem": "Linux, macOS, Windows",
+    "applicationCategory": "DeveloperApplication",
+    "description": "Fast, user-friendly HTTP client for the terminal — httpie rewritten in Rust.",
+    "url": "https://github.com/anilcan-kara/rusttp",
+    "author": {
+      "@type": "Person",
+      "name": "Anilcan Kara",
+      "url": "https://github.com/anilcan-kara"
+    }
+  }
+  </script>
+
+  <style>
+    :root {
+      --bg-primary: #090d16;
+      --bg-surface: #111827;
+      --bg-card: rgba(17, 24, 39, 0.7);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --text-primary: #f9fafb;
+      --text-secondary: #9ca3af;
+      --accent-orange: #f97316;
+      --accent-cyan: #06b6d4;
+      --accent-green: #10b981;
+      --accent-purple: #a855f7;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    .glow-bg {
+      position: absolute;
+      top: -200px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(249, 115, 22, 0.15) 0%, rgba(6, 182, 212, 0.08) 50%, transparent 70%);
+      filter: blur(80px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo span { color: var(--accent-orange); }
+
+    .nav-links { display: flex; gap: 24px; align-items: center; }
+    .nav-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.95rem;
+      transition: color 150ms ease;
+    }
+    .nav-links a:hover { color: #fff; }
+
+    .btn-github {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 150ms ease;
+    }
+    .btn-github:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .hero {
+      text-align: center;
+      padding: 80px 0 60px;
+    }
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(249, 115, 22, 0.1);
+      border: 1px solid rgba(249, 115, 22, 0.3);
+      color: var(--accent-orange);
+      padding: 6px 16px;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
+    h1 {
+      font-size: 3.5rem;
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 20px;
+    }
+    h1 .highlight {
+      background: linear-gradient(135deg, #f97316 0%, #06b6d4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      font-size: 1.25rem;
+      color: var(--text-secondary);
+      max-width: 680px;
+      margin: 0 auto 36px;
+    }
+
+    .cta-group {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      align-items: center;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+      color: #fff;
+      padding: 14px 28px;
+      border-radius: 10px;
+      font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 10px 25px -5px rgba(249, 115, 22, 0.4);
+      transition: transform 150ms ease, box-shadow 150ms ease;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 15px 30px -5px rgba(249, 115, 22, 0.5);
+    }
+    .code-box-hero {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 14px 20px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      color: #e5e7eb;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .terminal-window {
+      background: #0f172a;
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      overflow: hidden;
+      margin: 40px auto 80px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      max-width: 900px;
+    }
+    .terminal-header {
+      background: #1e293b;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-red { background: #ef4444; }
+    .dot-yellow { background: #f59e0b; }
+    .dot-green { background: #10b981; }
+    .terminal-title {
+      color: #94a3b8;
+      font-size: 0.85rem;
+      font-family: 'JetBrains Mono', monospace;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .terminal-body {
+      padding: 24px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      color: #f1f5f9;
+      line-height: 1.7;
+    }
+
+    .features { padding: 60px 0; }
+    .section-title { text-align: center; font-size: 2rem; font-weight: 700; margin-bottom: 48px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 30px;
+      backdrop-filter: blur(12px);
+      transition: border-color 150ms ease, transform 150ms ease;
+    }
+    .card:hover {
+      border-color: rgba(249, 115, 22, 0.4);
+      transform: translateY(-4px);
+    }
+    .card-icon {
+      font-size: 2rem;
+      margin-bottom: 16px;
+    }
+    .card h3 { font-size: 1.25rem; margin-bottom: 8px; color: #fff; }
+    .card p { color: var(--text-secondary); font-size: 0.95rem; }
+
+    .table-wrapper { margin: 60px 0; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th, td { padding: 16px 20px; border-bottom: 1px solid var(--border-color); }
+    th { background: rgba(255, 255, 255, 0.02); color: var(--text-secondary); font-weight: 600; }
+    td { color: #e5e7eb; }
+
+    footer {
+      border-top: 1px solid var(--border-color);
+      padding: 40px 0;
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="glow-bg"></div>
+
+  <div class="container">
+    <header>
+      <div class="logo">🦀 <span>rusttp</span></div>
+      <nav class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#comparison">Benchmarks</a>
+        <a href="#installation">Install</a>
+        <a href="https://github.com/anilcan-kara/rusttp" class="btn-github" target="_blank" id="btn-github-link">
+          <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          GitHub
+        </a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="badge-pill">🚀 v0.1.1 Released · Rust Edition 2024</div>
+        <h1>httpie, rewritten in Rust.<br><span class="highlight">Blazingly Fast Startup.</span></h1>
+        <p>Same intuitive syntax for HTTP requests. Zero Python runtime dependency. Instant ~2ms startup time.</p>
+        
+        <div class="cta-group">
+          <a href="https://github.com/anilcan-kara/rusttp#installation" class="btn-primary" id="btn-hero-install">Get Started</a>
+          <div class="code-box-hero">
+            <span>cargo install rusttp-cli</span>
+          </div>
+        </div>
+      </section>
+
+      <div class="terminal-window">
+        <div class="terminal-header">
+          <div class="dot dot-red"></div>
+          <div class="dot dot-yellow"></div>
+          <div class="dot dot-green"></div>
+          <div class="terminal-title">bash — rusttp</div>
+        </div>
+        <div class="terminal-body">
+          <span style="color: #64748b;"># Simple JSON POST request</span><br>
+          <span style="color: #38bdf8;">$ rusttp POST</span> https://httpbin.org/post <span style="color: #f97316;">name="Anilcan Kara"</span> <span style="color: #a855f7;">age:=28</span> <span style="color: #10b981;">Authorization:"Bearer token"</span><br><br>
+          <span style="color: #10b981; font-weight: bold;">HTTP/1.1 200 OK</span><br>
+          <span style="color: #94a3b8;">content-type:</span> application/json<br>
+          <span style="color: #94a3b8;">server:</span> gunicorn/19.9.0<br><br>
+          {<br>
+          &nbsp;&nbsp;<span style="color: #06b6d4;">"json"</span>: {<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #06b6d4;">"name"</span>: <span style="color: #f97316;">"Anilcan Kara"</span>,<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #06b6d4;">"age"</span>: <span style="color: #a855f7;">28</span><br>
+          &nbsp;&nbsp;}<br>
+          }
+        </div>
+      </div>
+
+      <section id="features" class="features">
+        <h2 class="section-title">Designed for Modern Developers</h2>
+        <div class="grid">
+          <div class="card">
+            <div class="card-icon">⚡</div>
+            <h3>~150x Faster Startup</h3>
+            <p>Runs in ~2ms compared to Python-based HTTP clients. Built in pure Rust for minimum memory footprint.</p>
+          </div>
+          <div class="card">
+            <div class="card-icon">🎨</div>
+            <h3>Syntax Highlighting</h3>
+            <p>Automatic syntax colorization for JSON, HTML, and XML responses with full terminal color support.</p>
+          </div>
+          <div class="card">
+            <div class="card-icon">🔌</div>
+            <h3>Offline Preview Mode</h3>
+            <p>Use <code>--offline</code> to preview and inspect your HTTP requests before sending them over the wire.</p>
+          </div>
+          <div class="card">
+            <div class="card-icon">📁</div>
+            <h3>File & Multipart Uploads</h3>
+            <p>Effortlessly upload images and files using the intuitive <code>key@./path.jpg</code> syntax.</p>
+          </div>
+          <div class="card">
+            <div class="card-icon">🔐</div>
+            <h3>Built-in Auth</h3>
+            <p>Supports Basic authentication and Bearer tokens out of the box with the <code>-a</code> flag.</p>
+          </div>
+          <div class="card">
+            <div class="card-icon">📦</div>
+            <h3>Static Binaries</h3>
+            <p>Zero dependencies. Download single static binaries for Windows, Linux, and macOS (Intel & Apple Silicon).</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="comparison" style="margin: 80px 0;">
+        <h2 class="section-title">Performance Comparison</h2>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>rusttp 🦀</th>
+                <th>httpie 🐍</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Cold Startup Time</td>
+                <td><strong>~2.4 ms</strong></td>
+                <td>~310.0 ms</td>
+              </tr>
+              <tr>
+                <td>Runtime Dependency</td>
+                <td><strong>None (Static Binary)</strong></td>
+                <td>Python 3 + Pip</td>
+              </tr>
+              <tr>
+                <td>Memory Usage (RAM)</td>
+                <td><strong>~4.2 MB</strong></td>
+                <td>~32.0 MB</td>
+              </tr>
+              <tr>
+                <td>Offline Preview Mode</td>
+                <td><strong>Yes (<code>--offline</code>)</strong></td>
+                <td>No</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>MIT License © 2026 Anilcan Kara · Built with Rust 🦀</p>
+    </footer>
+  </div>
+</body>
+</html>
