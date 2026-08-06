@@ -184,3 +184,17 @@ async fn main() -> Result<()> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_expand_url() {
+        assert_eq!(expand_url("https://httpbin.org/get"), "https://httpbin.org/get");
+        assert_eq!(expand_url("http://localhost:8080"), "http://localhost:8080");
+        assert_eq!(expand_url(":3000/api"), "http://localhost:3000/api");
+        assert_eq!(expand_url("localhost:5000"), "http://localhost:5000");
+        assert_eq!(expand_url("api.example.com"), "https://api.example.com");
+    }
+}
