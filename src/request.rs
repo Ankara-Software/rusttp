@@ -185,3 +185,46 @@ pub async fn send_request(
 
     Ok(response)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_json_fields() {
+        let items = vec![
+            "name=Anilcan".to_string(),
+            "age:=28".to_string(),
+            "active:=true".to_string(),
+        ];
+        let parsed = ParsedItems::parse(&items).unwrap();
+        assert_eq!(parsed.json_fields.len(), 3);
+        assert_eq!(parsed.json_fields[0].0, "name");
+        assert_eq!(parsed.json_fields[0].1, serde_json::Value::String("Anilcan".to_string()));
+        assert_eq!(parsed.json_fields[1].0, "age");
+        assert_eq!(parsed.json_fields[1].1, serde_json::json!(28));
+        assert_eq!(parsed.json_fields[2].0, "active");
+        assert_eq!(parsed.json_fields[2].1, serde_json::Value::Bool(true));
+    }
+
+    #[test]
+    fn test_parse_headers_and_params() {
+        let items = vec![
+            "Authorization:Bearer token123".to_string(),
+            "page==2".to_string(),
+        ];
+        let parsed = ParsedItems::parse(&items).unwrap();
+        assert_eq!(parsed.headers.get("Authorization").unwrap(), "Bearer token123");
+        assert_eq!(parsed.query_params.len(), 1);
+        assert_eq!(parsed.query_params[0], ("page".to_string(), "2".to_string()));
+    }
+
+    #[test]
+    fn test_apply_query_params() {
+        let url = "https://httpbin.org/get";
+        let params = vec![("page".to_string(), "2".to_string()), ("limit".to_string(), "10".to_string())];
+        let result = apply_query_params(url, &params).unwrap();
+        assert!(result.contains("page=2"));
+        assert!(result.contains("limit=10"));
+    }
+}
