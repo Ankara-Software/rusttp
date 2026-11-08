@@ -2,9 +2,9 @@
 set -e
 
 # rusttp Installer
-# Usage: curl -fsSL https://raw.githubusercontent.com/anilcan-kara/rusttp/master/install.sh | sh
+# Usage: curl -fsSL https://raw.githubusercontent.com/Ankara-Software/rusttp/master/install.sh | sh
 
-REPO="anilcan-kara/rusttp"
+REPO="Ankara-Software/rusttp"
 VERSION="0.1.1"
 
 echo "Detecting system architecture..."
