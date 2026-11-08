@@ -33,7 +33,7 @@ rusttp, httpie benzeri istek söz dizimiyle çalışan, terminal için bir HTTP 
 | Request syntax | httpie-style subset (see below) | Full httpie syntax |
 | Syntax highlighting | Yes | Yes |
 | JSON, form and file upload | Yes | Yes |
-| Offline mode (print request) | Yes (`--offline`) | No |
+| Offline mode (print request) | Yes (`--offline`) | Yes (`--offline`) |
 
 ---
 
