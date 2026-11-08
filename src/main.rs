@@ -117,14 +117,11 @@ fn expand_url(raw: &str) -> String {
     format!("https://{}", s)
 }
 
-#[tokio::main]
-async fn main() -> Result<()> {
-    let args = Args::parse();
-    let (method, raw_url) = resolve_method_and_url(&args);
-    let url = expand_url(&raw_url);
-
-    let print_flags = if let Some(ref p) = args.print {
+fn resolve_print_flags(args: &Args) -> String {
+    if let Some(ref p) = args.print {
         p.clone()
+    } else if args.offline {
+        "HB".to_string()
     } else if args.verbose {
         "HBhb".to_string()
     } else if args.headers {
@@ -135,7 +132,16 @@ async fn main() -> Result<()> {
         "h".to_string()
     } else {
         "hb".to_string()
-    };
+    }
+}
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    let args = Args::parse();
+    let (method, raw_url) = resolve_method_and_url(&args);
+    let url = expand_url(&raw_url);
+
+    let print_flags = resolve_print_flags(&args);
 
     let parsed = request::ParsedItems::parse(&args.items)?;
 
@@ -196,5 +202,17 @@ mod tests {
         assert_eq!(expand_url(":3000/api"), "http://localhost:3000/api");
         assert_eq!(expand_url("localhost:5000"), "http://localhost:5000");
         assert_eq!(expand_url("api.example.com"), "https://api.example.com");
+    }
+
+    #[test]
+    fn test_offline_defaults_to_request_output() {
+        let args = Args::parse_from(["rusttp", "--offline", "POST", "https://example.com", "a=b"]);
+        assert_eq!(resolve_print_flags(&args), "HB");
+    }
+
+    #[test]
+    fn test_default_prints_response() {
+        let args = Args::parse_from(["rusttp", "https://example.com"]);
+        assert_eq!(resolve_print_flags(&args), "hb");
     }
 }

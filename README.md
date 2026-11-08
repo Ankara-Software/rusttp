@@ -1,13 +1,15 @@
+Maintained by [Ankara Yazılım](https://github.com/Ankara-Software) | [Project page](https://ankarayazilim.org/acik-kaynak/rusttp)
+
+**Status: stable.** It builds, the 7 unit tests pass and the README examples (GET, POST with JSON, form, offline preview) were run against a local server. It implements a subset of the httpie request syntax, not all of it.
+
 <div align="center">
 
 <h1>rusttp</h1>
 
-<p><strong>A fast, user-friendly HTTP client for the terminal — httpie, rewritten in Rust.</strong></p>
+<p><strong>An HTTP client for the terminal with httpie-style request syntax — written in Rust.</strong></p>
 
-[![Crates.io](https://img.shields.io/crates/v/rusttp-cli?style=flat-square&color=fc8d62)](https://crates.io/crates/rusttp-cli)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
-[![Build](https://img.shields.io/github/actions/workflow/status/anilcan-kara/rusttp/release.yml?style=flat-square)](https://github.com/anilcan-kara/rusttp/actions)
-[![GitHub Release](https://img.shields.io/github/v/release/anilcan-kara/rusttp?style=flat-square&color=8be04e)](https://github.com/anilcan-kara/rusttp/releases)
+[![GitHub Release](https://img.shields.io/github/v/release/Ankara-Software/rusttp?style=flat-square&color=8be04e)](https://github.com/Ankara-Software/rusttp/releases)
 
 ```
 rusttp POST https://httpbin.org/post name="Anilcan Kara" age:=28 X-Token:secret
@@ -15,48 +17,42 @@ rusttp POST https://httpbin.org/post name="Anilcan Kara" age:=28 X-Token:secret
 
 </div>
 
+## Türkçe
+
+rusttp, httpie benzeri istek söz dizimiyle çalışan, terminal için bir HTTP istemcisidir. `key=value` ile JSON alanı, `key:=değer` ile ham JSON değeri, `key==değer` ile sorgu parametresi, `Header:değer` ile başlık ve `alan@dosya` ile dosya yükleme gönderir. Yanıtı renklendirerek gösterir. `--offline` ile isteği göndermeden ne gideceğini yazdırır. Tek bir yerel (native) ikili dosya olarak gelir, Python gerektirmez. httpie söz diziminin yalnızca bir alt kümesini uygular.
+
 ---
 
 ## Why rusttp?
 
-`httpie` is great — but it's Python. That means slow startup, a heavy runtime dependency, and noticeable latency on every invocation. **rusttp** gives you the same human-friendly syntax with the performance of a native binary.
+`httpie` is a Python tool and needs a Python runtime. rusttp offers a similar request syntax as a single native binary, with no runtime to install.
 
-| | rusttp REX 🦀 | httpie 🐍 |
+| | rusttp | httpie |
 |---|---|---|
-| Startup time | ~2ms | ~300ms |
-| Runtime dependency | None | Python 3 + pip |
-| Binary size | ~4MB (static) | N/A |
-| Syntax | Identical | ✓ |
-| Syntax highlighting | ✓ | ✓ |
-| JSON support | ✓ | ✓ |
-| File uploads | ✓ | ✓ |
-| Offline mode | ✓ | ✗ |
+| Runtime dependency | None | Python 3 |
+| Request syntax | httpie-style subset (see below) | Full httpie syntax |
+| Syntax highlighting | Yes | Yes |
+| JSON, form and file upload | Yes | Yes |
+| Offline mode (print request) | Yes (`--offline`) | No |
 
 ---
 
 ## Installation
 
-### ⚡ Quick Install (Linux / macOS)
+### Install script (Linux / macOS)
 ```bash
-curl -fsSL https://raw.githubusercontent.com/anilcan-kara/rusttp/master/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/Ankara-Software/rusttp/master/install.sh | sh
 ```
 
-### Cargo (from source)
+### Cargo (from source, Rust 1.85+)
 ```bash
-cargo install --git https://github.com/anilcan-kara/rusttp.git
+cargo install --git https://github.com/Ankara-Software/rusttp
 ```
+The crate is also published on crates.io as `rusttp-cli`. The published 0.1.1 installs a binary named `rusttp-cli`; building from this repository installs `rusttp`.
 
-### Pre-built Binaries
+### Pre-built binaries
 
-Download a static binary directly — no dependencies, just run it:
-
-| Platform | Download |
-|---|---|
-| 🪟 Windows (x64) | [rusttp-win32-x64.exe](https://github.com/anilcan-kara/rusttp/releases/download/v0.1.1/rusttp-win32-x64.exe) |
-| 🐧 Linux (x64) | [rusttp-linux-x64](https://github.com/anilcan-kara/rusttp/releases/download/v0.1.1/rusttp-linux-x64) |
-| 🐧 Linux (ARM64) | [rusttp-linux-arm64](https://github.com/anilcan-kara/rusttp/releases/download/v0.1.1/rusttp-linux-arm64) |
-| 🍎 macOS (x64) | [rusttp-darwin-x64](https://github.com/anilcan-kara/rusttp/releases/download/v0.1.1/rusttp-darwin-x64) |
-| 🍎 macOS (ARM64/M-series) | [rusttp-darwin-arm64](https://github.com/anilcan-kara/rusttp/releases/download/v0.1.1/rusttp-darwin-arm64) |
+Download the binary for your platform from the [latest release](https://github.com/Ankara-Software/rusttp/releases/latest): `rusttp-win32-x64.exe`, `rusttp-linux-x64`, `rusttp-linux-arm64`, `rusttp-darwin-x64`, `rusttp-darwin-arm64`.
 
 ---
 
@@ -74,18 +70,32 @@ rusttp POST https://httpbin.org/post name="Anilcan Kara" age:=28 active:=true
 ```
 
 ### Offline Mode (Preview Request)
+Prints the request that would be sent, without sending it:
 ```bash
 rusttp --offline POST https://httpbin.org/post name=Anilcan
 ```
 
+### Request items
+```
+key=value      JSON string field
+key:=value     Raw JSON value (number, bool, array, object)
+key==value     URL query parameter
+Header:value   HTTP header
+key@file       File upload (multipart)
+```
+Use `--form` for form-encoded fields, `--auth user:password` (or `--auth-type bearer`), `--follow` for redirects, `--download -o file`, `--proxy`, `--raw` to disable formatting. Run `rusttp --help` for all options.
+
 ---
 
-## Contributing
+## Development
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). All PRs welcome.
+```bash
+cargo build
+cargo test
+```
 
----
+See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
 ## License
 
-MIT © [Anilcan Kara](https://github.com/anilcan-kara)
+MIT. Copyright (c) 2026 Anilcan Kara. See [LICENSE](LICENSE).
