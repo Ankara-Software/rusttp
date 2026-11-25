@@ -1,8 +1,8 @@
-use std::collections::HashMap;
 use anyhow::{Context, Result, bail};
-use reqwest::{Client, Response, Method, header};
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD as BASE64;
+use reqwest::{Client, Method, Response, header};
+use std::collections::HashMap;
 use url::Url;
 
 use crate::Args;
@@ -23,8 +23,9 @@ impl ParsedItems {
             if let Some(pos) = item.find(":=") {
                 let key = item[..pos].to_string();
                 let val_str = &item[pos + 2..];
-                let val: serde_json::Value = serde_json::from_str(val_str)
-                    .with_context(|| format!("Invalid JSON value for key '{}': {}", key, val_str))?;
+                let val: serde_json::Value = serde_json::from_str(val_str).with_context(|| {
+                    format!("Invalid JSON value for key '{}': {}", key, val_str)
+                })?;
                 parsed.json_fields.push((key, val));
             } else if let Some(pos) = item.find("==") {
                 let key = item[..pos].to_string();
@@ -42,7 +43,9 @@ impl ParsedItems {
                 if pos > 0 && !item[..pos].contains(':') {
                     let key = item[..pos].to_string();
                     let val = item[pos + 1..].to_string();
-                    parsed.json_fields.push((key, serde_json::Value::String(val)));
+                    parsed
+                        .json_fields
+                        .push((key, serde_json::Value::String(val)));
                 } else {
                     try_parse_header_or_field(item, &mut parsed)?;
                 }
@@ -90,14 +93,14 @@ pub async fn send_request(
     parsed: &ParsedItems,
     args: &Args,
 ) -> Result<Response> {
-    let method = Method::from_bytes(method.as_bytes())
-        .context("Invalid HTTP method")?;
+    let method = Method::from_bytes(method.as_bytes()).context("Invalid HTTP method")?;
 
-    let mut client_builder = Client::builder()
-        .timeout(std::time::Duration::from_secs(args.timeout));
+    let mut client_builder =
+        Client::builder().timeout(std::time::Duration::from_secs(args.timeout));
 
     if args.follow {
-        client_builder = client_builder.redirect(reqwest::redirect::Policy::limited(args.max_redirects));
+        client_builder =
+            client_builder.redirect(reqwest::redirect::Policy::limited(args.max_redirects));
     } else {
         client_builder = client_builder.redirect(reqwest::redirect::Policy::none());
     }
@@ -107,16 +110,20 @@ pub async fn send_request(
     }
 
     if let Some(ref proxy_url) = args.proxy {
-        let proxy = reqwest::Proxy::all(proxy_url)
-            .context("Invalid proxy URL")?;
+        let proxy = reqwest::Proxy::all(proxy_url).context("Invalid proxy URL")?;
         client_builder = client_builder.proxy(proxy);
     }
 
-    let client = client_builder.build().context("Failed to build HTTP client")?;
+    let client = client_builder
+        .build()
+        .context("Failed to build HTTP client")?;
 
     let mut req = client.request(method, url);
 
-    req = req.header(header::USER_AGENT, format!("rusttp/{}", env!("CARGO_PKG_VERSION")));
+    req = req.header(
+        header::USER_AGENT,
+        format!("rusttp/{}", env!("CARGO_PKG_VERSION")),
+    );
 
     for (key, val) in &parsed.headers {
         req = req.header(key.as_str(), val.as_str());
@@ -145,7 +152,8 @@ pub async fn send_request(
                 }
             }
             for (key, path) in &parsed.files {
-                let file_bytes = tokio::fs::read(path).await
+                let file_bytes = tokio::fs::read(path)
+                    .await
                     .with_context(|| format!("Cannot read file: {}", path))?;
                 let filename = std::path::Path::new(path)
                     .file_name()
@@ -180,8 +188,7 @@ pub async fn send_request(
         req = req.json(&serde_json::Value::Object(json_obj));
     }
 
-    let response = req.send().await
-        .context("Request failed")?;
+    let response = req.send().await.context("Request failed")?;
 
     Ok(response)
 }
@@ -200,7 +207,10 @@ mod tests {
         let parsed = ParsedItems::parse(&items).unwrap();
         assert_eq!(parsed.json_fields.len(), 3);
         assert_eq!(parsed.json_fields[0].0, "name");
-        assert_eq!(parsed.json_fields[0].1, serde_json::Value::String("Anilcan".to_string()));
+        assert_eq!(
+            parsed.json_fields[0].1,
+            serde_json::Value::String("Anilcan".to_string())
+        );
         assert_eq!(parsed.json_fields[1].0, "age");
         assert_eq!(parsed.json_fields[1].1, serde_json::json!(28));
         assert_eq!(parsed.json_fields[2].0, "active");
@@ -214,15 +224,24 @@ mod tests {
             "page==2".to_string(),
         ];
         let parsed = ParsedItems::parse(&items).unwrap();
-        assert_eq!(parsed.headers.get("Authorization").unwrap(), "Bearer token123");
+        assert_eq!(
+            parsed.headers.get("Authorization").unwrap(),
+            "Bearer token123"
+        );
         assert_eq!(parsed.query_params.len(), 1);
-        assert_eq!(parsed.query_params[0], ("page".to_string(), "2".to_string()));
+        assert_eq!(
+            parsed.query_params[0],
+            ("page".to_string(), "2".to_string())
+        );
     }
 
     #[test]
     fn test_apply_query_params() {
         let url = "https://httpbin.org/get";
-        let params = vec![("page".to_string(), "2".to_string()), ("limit".to_string(), "10".to_string())];
+        let params = vec![
+            ("page".to_string(), "2".to_string()),
+            ("limit".to_string(), "10".to_string()),
+        ];
         let result = apply_query_params(url, &params).unwrap();
         assert!(result.contains("page=2"));
         assert!(result.contains("limit=10"));

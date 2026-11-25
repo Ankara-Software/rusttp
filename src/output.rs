@@ -1,12 +1,12 @@
-use colored::*;
-use reqwest::header::HeaderMap;
-use reqwest::StatusCode;
 use anyhow::Result;
+use colored::*;
 use indicatif::{ProgressBar, ProgressStyle};
+use reqwest::StatusCode;
+use reqwest::header::HeaderMap;
 
-use crate::request::ParsedItems;
-use crate::formatter;
 use crate::Args;
+use crate::formatter;
+use crate::request::ParsedItems;
 
 pub fn print_response(
     status: StatusCode,
@@ -75,7 +75,8 @@ pub fn print_response(
             println!("{}", body_str);
         } else if content_type.contains("json") {
             if let Ok(json_val) = serde_json::from_str::<serde_json::Value>(&body_str) {
-                let pretty = serde_json::to_string_pretty(&json_val).unwrap_or_else(|_| body_str.to_string());
+                let pretty = serde_json::to_string_pretty(&json_val)
+                    .unwrap_or_else(|_| body_str.to_string());
                 formatter::print_highlighted_json(&pretty);
             } else {
                 println!("{}", body_str);
@@ -103,13 +104,26 @@ pub fn print_offline_request(
             .and_then(|u| u.host_str().map(|s| s.to_string()))
             .unwrap_or_default();
         println!("{}{} {}", "Host".cyan(), ":".white(), host);
-        println!("{}{} {}", "User-Agent".cyan(), ":".white(), format!("rusttp/{}", env!("CARGO_PKG_VERSION")));
+        println!(
+            "{}{} rusttp/{}",
+            "User-Agent".cyan(),
+            ":".white(),
+            env!("CARGO_PKG_VERSION")
+        );
 
         if !parsed.json_fields.is_empty() && !args.form {
-            println!("{}{} {}", "Content-Type".cyan(), ":".white(), "application/json");
-            println!("{}{} {}", "Accept".cyan(), ":".white(), "application/json, */*;q=0.5");
+            println!("{}{} application/json", "Content-Type".cyan(), ":".white());
+            println!(
+                "{}{} application/json, */*;q=0.5",
+                "Accept".cyan(),
+                ":".white()
+            );
         } else if args.form {
-            println!("{}{} {}", "Content-Type".cyan(), ":".white(), "application/x-www-form-urlencoded");
+            println!(
+                "{}{} application/x-www-form-urlencoded",
+                "Content-Type".cyan(),
+                ":".white()
+            );
         }
 
         for (key, val) in &parsed.headers {
@@ -124,8 +138,8 @@ pub fn print_offline_request(
         for (key, val) in &parsed.json_fields {
             obj.insert(key.clone(), val.clone());
         }
-        let pretty = serde_json::to_string_pretty(&serde_json::Value::Object(obj))
-            .unwrap_or_default();
+        let pretty =
+            serde_json::to_string_pretty(&serde_json::Value::Object(obj)).unwrap_or_default();
         formatter::print_highlighted_json(&pretty);
     }
 }
@@ -137,16 +151,21 @@ pub async fn download_response(
     let filename = output_path
         .map(|s| s.to_string())
         .or_else(|| {
-            response.headers().get("content-disposition")
+            response
+                .headers()
+                .get("content-disposition")
                 .and_then(|v| v.to_str().ok())
                 .and_then(|v| {
-                    v.split("filename=").nth(1)
+                    v.split("filename=")
+                        .nth(1)
                         .map(|s| s.trim_matches('"').to_string())
                 })
         })
         .or_else(|| {
-            response.url().path_segments()
-                .and_then(|seg| seg.last())
+            response
+                .url()
+                .path_segments()
+                .and_then(|mut seg| seg.next_back())
                 .filter(|s| !s.is_empty())
                 .map(|s| s.to_string())
         })
@@ -167,7 +186,11 @@ pub async fn download_response(
     pb.set_position(bytes.len() as u64);
 
     tokio::fs::write(&filename, &bytes).await?;
-    pb.finish_with_message(format!("Saved to {} ({} bytes)", filename.green().bold(), bytes.len()));
+    pb.finish_with_message(format!(
+        "Saved to {} ({} bytes)",
+        filename.green().bold(),
+        bytes.len()
+    ));
 
     Ok(())
 }

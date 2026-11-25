@@ -1,10 +1,10 @@
 mod formatter;
-mod request;
 mod output;
+mod request;
 
-use std::process;
-use clap::Parser;
 use anyhow::Result;
+use clap::Parser;
+use std::process;
 
 #[derive(Parser, Debug)]
 #[command(
@@ -15,7 +15,9 @@ use anyhow::Result;
     after_help = "Request items:\n  key=value      JSON string field\n  key:=value     Raw JSON value (number, bool, array, object)\n  key==value     URL query parameter\n  header:value   HTTP header\n  key@file       File upload (multipart)"
 )]
 struct Args {
-    #[arg(help = "HTTP method (GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS). Defaults to GET, or POST when data is provided.")]
+    #[arg(
+        help = "HTTP method (GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS). Defaults to GET, or POST when data is provided."
+    )]
     method_or_url: String,
 
     #[arg(help = "URL (required if method is given)")]
@@ -48,7 +50,11 @@ struct Args {
     #[arg(short = 'b', long, help = "Print only response body")]
     body: bool,
 
-    #[arg(short = 'p', long, help = "What to print: H (request headers), B (request body), h (response headers), b (response body)")]
+    #[arg(
+        short = 'p',
+        long,
+        help = "What to print: H (request headers), B (request body), h (response headers), b (response body)"
+    )]
     print: Option<String>,
 
     #[arg(short = 'F', long, help = "Follow redirects")]
@@ -72,7 +78,11 @@ struct Args {
     #[arg(long, help = "Do not format/colorize output")]
     raw: bool,
 
-    #[arg(long, default_value = "monokai", help = "Color style: monokai, github, dracula")]
+    #[arg(
+        long,
+        default_value = "monokai",
+        help = "Color style: monokai, github, dracula"
+    )]
     style: String,
 
     #[arg(long, help = "Set a proxy (http://host:port)")]
@@ -88,7 +98,7 @@ fn resolve_method_and_url(args: &Args) -> (String, String) {
 
     if known_methods.contains(&upper.as_str()) {
         let url = args.url.clone().unwrap_or_else(|| {
-            eprintln!("{}", "error: URL is required when method is specified");
+            eprintln!("error: URL is required when method is specified");
             process::exit(1);
         });
         (upper, url)
@@ -98,7 +108,11 @@ fn resolve_method_and_url(args: &Args) -> (String, String) {
                 || i.contains(":=")
                 || i.contains('@')
         });
-        let method = if has_data || args.form || args.multipart { "POST" } else { "GET" };
+        let method = if has_data || args.form || args.multipart {
+            "POST"
+        } else {
+            "GET"
+        };
         (method.to_string(), args.method_or_url.clone())
     }
 }
@@ -148,22 +162,11 @@ async fn main() -> Result<()> {
     let built_url = request::apply_query_params(&url, &parsed.query_params)?;
 
     if args.offline {
-        output::print_offline_request(
-            &method,
-            &built_url,
-            &parsed,
-            &args,
-            &print_flags,
-        );
+        output::print_offline_request(&method, &built_url, &parsed, &args, &print_flags);
         return Ok(());
     }
 
-    let response = request::send_request(
-        &method,
-        &built_url,
-        &parsed,
-        &args,
-    ).await?;
+    let response = request::send_request(&method, &built_url, &parsed, &args).await?;
 
     let status = response.status();
     let resp_headers = response.headers().clone();
@@ -197,7 +200,10 @@ mod tests {
 
     #[test]
     fn test_expand_url() {
-        assert_eq!(expand_url("https://httpbin.org/get"), "https://httpbin.org/get");
+        assert_eq!(
+            expand_url("https://httpbin.org/get"),
+            "https://httpbin.org/get"
+        );
         assert_eq!(expand_url("http://localhost:8080"), "http://localhost:8080");
         assert_eq!(expand_url(":3000/api"), "http://localhost:3000/api");
         assert_eq!(expand_url("localhost:5000"), "http://localhost:5000");
