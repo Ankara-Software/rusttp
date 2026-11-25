@@ -1,6 +1,6 @@
 use syntect::easy::HighlightLines;
-use syntect::parsing::SyntaxSet;
 use syntect::highlighting::ThemeSet;
+use syntect::parsing::SyntaxSet;
 use syntect::util::as_24_bit_terminal_escaped;
 
 pub fn print_highlighted_json(text: &str) {
@@ -14,7 +14,8 @@ pub fn print_highlighted_xml(text: &str) {
 pub fn format_highlighted_string(text: &str, extension: &str) -> String {
     let ps = SyntaxSet::load_defaults_newlines();
     let ts = ThemeSet::load_defaults();
-    let syntax = ps.find_syntax_by_extension(extension)
+    let syntax = ps
+        .find_syntax_by_extension(extension)
         .unwrap_or_else(|| ps.find_syntax_plain_text());
     let theme = &ts.themes["base16-ocean.dark"];
     let mut h = HighlightLines::new(syntax, theme);
